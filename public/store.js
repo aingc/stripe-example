@@ -31,15 +31,69 @@ const ready = () => {
 };
 
 /**
- * Clear the cart and alert the user
+ * Token function will be called after person clicks purchase, fills in cc info,
+ * it will get sent to Stripe and once Stripe verifies everything, the function will
+ * be called
  */
+let stripeHandler = StripeCheckout.configure({
+  key: stripePublicKey,
+  locale: 'auto',
+  token: (token) => {
+    let items = [];
+    let cartItemContainer = document.getElementsByClassName('cart-items')[0];
+    let cartRows = cartItemContainer.getElementsByClassName('cart-row');
+    for (let i = 0; i < cartRows.length; i++) {
+      let cartRow = cartRows[i];
+      let quantityElement = cartRow.getElementsByClassName(
+        'cart-quantity-input'
+      )[0];
+      let quantity = quantityElement.value;
+      let id = cartRow.dataset.itemId;
+      items.push({
+        id,
+        quantity,
+      });
+      /**
+       * fetch allows to either send or request out to servers and get back info async,
+       * so we don't have to refresh the page and the user can stay on the same page, and
+       * it'll send the info and once it comes back we do something with it
+       */
+      fetch('/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // denoting we are sending a json
+          Accept: 'application/json', // denoting we are receiving a json
+        },
+        body: JSON.stringify({
+          stripeTokenId: token.id,
+          items,
+        }),
+      })
+        .then((res) => {
+          return res.json();
+        })
+        .then((data) => {
+          alert(data.message);
+          let cartItems = document.getElementsByClassName('cart-items')[0];
+          while (cartItems.hasChildNodes()) {
+            cartItems.removeChild(cartItems.firstChild);
+          }
+          updateCartTotal();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+  },
+});
+
 const purchaseClicked = () => {
-  alert('Thank you for your purchase');
-  let cartItems = document.getElementsByClassName('cart-items')[0];
-  while (cartItems.hasChildNodes()) {
-    cartItems.removeChild(cartItems.firstChild);
-  }
-  updateCartTotal();
+  let priceElement = document.getElementsByClassName('cart-total-price')[0];
+  let price = parseFloat(priceElement.innerText.replace('$', '')) * 100;
+
+  stripeHandler.open({
+    amount: price,
+  });
 };
 
 /**
@@ -83,7 +137,9 @@ const addToCartClicked = (event) => {
   let itemPrice = shopItem.getElementsByClassName('shop-item-price')[0]
     .innerText;
   let itemImgSrc = shopItem.getElementsByClassName('shop-item-image')[0].src;
-  addItemToCart(itemTitle, itemPrice, itemImgSrc);
+  // dataset accesses attributes starting with 'data-' by camelcase
+  let id = shopItem.dataset.itemId;
+  addItemToCart(itemTitle, itemPrice, itemImgSrc, id);
   updateCartTotal();
 };
 
@@ -96,9 +152,10 @@ const addToCartClicked = (event) => {
  * @param {Price string for item} price
  * @param {Image source string for item} imgSrc
  */
-const addItemToCart = (title, price, imgSrc) => {
+const addItemToCart = (title, price, imgSrc, id) => {
   let cartRow = document.createElement('div');
   cartRow.className = 'cart-row';
+  cartRow.dataset.itemId = id;
   let cartItems = document.getElementsByClassName('cart-items')[0];
   let cartItemNames = cartItems.getElementsByClassName('cart-item-title');
   for (let i = 0; i < cartItemNames.length; i++) {
