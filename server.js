@@ -10,12 +10,15 @@ const app = express();
 const fs = require('fs');
 
 app.set('view engine', 'ejs');
+//app.engine('ejs', require('ejs').__express);
+app.use(express.json());
 app.use(express.static('public'));
 
 app.get('/store', (req, res) => {
-  fs.readFile('items.json', (error, data) => {
-    if (error) res.status(500).end();
-    else {
+  fs.readFile('./items.json', (error, data) => {
+    if (error) {
+      res.status(500).end();
+    } else {
       /**
        * 2nd param is all diff vars that we want to send to the page
        * in this case its the items

@@ -4,7 +4,6 @@
  */
 const ready = () => {
   let removeCartItemButtons = document.getElementsByClassName('btn-danger');
-  console.log(removeCartItemButtons);
 
   // for nodeList and HTMLCollection, it is better to iterate over with a for loop
   // instead of for/in because its meant for iterating props of an obj
