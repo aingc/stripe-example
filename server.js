@@ -29,6 +29,12 @@ app.get('/store', (req, res) => {
        * While using express, by default, all of my views rendered here need to be in a
        * folder named: views
        */
+      /**
+       * Items are rendered server-side, which means server has total control on what items
+       * the front-end uses and also has control on what items is sent back to the user to
+       * determine the total price, so the user can't fake a $0 charge as the server will
+       * know that the items do not add up to $0
+       */
       res.render('store.ejs', {
         items: JSON.parse(data),
       });
